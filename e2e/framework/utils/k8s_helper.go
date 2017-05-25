@@ -20,7 +20,7 @@ func CreatK8sHelper() *K8sHelper {
 	return &K8sHelper{}
 }
 
-func (k8sh *K8sHelper) getMonIp(mon string) (string, error) {
+func (k8sh *K8sHelper) GetMonIp(mon string) (string, error) {
 	//kubectl -n rook get pod mon0 -o json|jq ".status.podIP"|
 	cmdArgs := []string{"-n", "rook", "get", "pod", mon, "-o", "json"}
 	out, err, status := ExecuteCmd("kubectl", cmdArgs)
@@ -36,19 +36,10 @@ func (k8sh *K8sHelper) getMonIp(mon string) (string, error) {
 	}
 }
 
-func (k8sh *K8sHelper) ResourceOperationFromTemplate(action string, poddefPath string) (string, error) {
+func (k8sh *K8sHelper) ResourceOperationFromTemplate(action string, poddefPath string, config map[string]string) (string, error) {
 
 	t, _ := template.ParseFiles(poddefPath)
-	mons := k8sh.getMonitorPods()
-	ip1, _ := k8sh.getMonIp(mons[0])
-	ip2, _ := k8sh.getMonIp(mons[1])
-	ip3, _ := k8sh.getMonIp(mons[2])
 
-	config := map[string]string{
-		"mon0": ip1,
-		"mon1": ip2,
-		"mon2": ip3,
-	}
 	file, _ := ioutil.TempFile(os.TempDir(), "prefix")
 	t.Execute(file, config)
 	dir, _ := filepath.Abs(file.Name())
@@ -73,7 +64,7 @@ func (k8sh *K8sHelper) ResourceOperation(action string, poddefPath string) (stri
 	}
 }
 
-func (k8sh *K8sHelper) getMonitorPods() []string {
+func (k8sh *K8sHelper) GetMonitorPods() []string {
 	mons := []string{}
 	monIdx := 0
 	moncount := 0
@@ -285,4 +276,46 @@ func (k8sh *K8sHelper) GetPodHostId(podNamePattern string, namespace string) (st
 	} else {
 		return serr, fmt.Errorf("Error Getting Monitor IP")
 	}
+}
+
+func (k8sh *K8sHelper) IsStorageClassPresent(name string) (bool, error) {
+	cmdArgs := []string{"get", "storageclass", "-o", "jsonpath='{.items[*].metadata.name}'"}
+	sout, serr, _ := ExecuteCmd("kubectl", cmdArgs)
+	if strings.Contains(sout, name) {
+		return true, nil
+	}
+	return false, fmt.Errorf("Storageclass %s not found, err ->%s", name, serr)
+
+}
+
+func (k8sh *K8sHelper) GetPVCStatus(name string) (string, error) {
+	cmdArgs := []string{"get", "pvc", "-o", "jsonpath='{.items[*].metadata.name}'"}
+	sout, serr, _ := ExecuteCmd("kubectl", cmdArgs)
+	if strings.Contains(sout, name) {
+		cmdArgs := []string{"get", "pvc", name, "-o", "jsonpath='{.status.phase}'"}
+		res, _, _ := ExecuteCmd("kubectl", cmdArgs)
+		return res, nil
+	}
+	return "PVC NOT FOUND", fmt.Errorf("PVC %s not found,err->%s", name, serr)
+}
+
+func (k8sh *K8sHelper) IsPodInExpectedState(podNamePattern string, namespace string, state string) bool {
+	cmdArgs := []string{"get", "pods", "-l", "app=" + podNamePattern, "-o", "jsonpath={.items[0].status.phase}", "--no-headers=true"}
+	if namespace != "" {
+		cmdArgs = append(cmdArgs, []string{"-n", namespace}...)
+	}
+	inc := 0
+	for inc < 10 {
+		res, _, status := ExecuteCmd("kubectl", cmdArgs)
+		if status == 0 {
+			if res == state {
+				return true
+			}
+		}
+		inc++
+		time.Sleep(10 * time.Second)
+
+	}
+
+	return false
 }
