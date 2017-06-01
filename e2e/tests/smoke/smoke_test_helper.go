@@ -251,8 +251,19 @@ func (h *SmokeTestHelper) MountFileStorage() (string, error) {
 	switch h.platform {
 	case enums.Kubernetes:
 		fileTestData, _ := h.getFileTestData()
+		mons := h.k8sHelp.GetMonitorPods()
+		ip1, _ := h.k8sHelp.GetMonIp(mons[0])
+		ip2, _ := h.k8sHelp.GetMonIp(mons[1])
+		ip3, _ := h.k8sHelp.GetMonIp(mons[2])
+
+		config := map[string]string{
+			"mon0": ip1,
+			"mon1": ip2,
+			"mon2": ip3,
+		}
+
 		// Create pod that has has file sytem mounted
-		_, err := h.k8sHelp.ResourceOperationFromTemplate("create", fileTestData.podDefPath)
+		_, err := h.k8sHelp.ResourceOperationFromTemplate("create", fileTestData.podDefPath, config)
 		if err != nil {
 			return "MOUNT UNSUCCESSFUL", err
 		}
@@ -300,8 +311,18 @@ func (h *SmokeTestHelper) UnmountFileStorage() (string, error) {
 	switch h.platform {
 	case enums.Kubernetes:
 		fileTestData, _ := h.getFileTestData()
+		mons := h.k8sHelp.GetMonitorPods()
+		ip1, _ := h.k8sHelp.GetMonIp(mons[0])
+		ip2, _ := h.k8sHelp.GetMonIp(mons[1])
+		ip3, _ := h.k8sHelp.GetMonIp(mons[2])
+
+		config := map[string]string{
+			"mon0": ip1,
+			"mon1": ip2,
+			"mon2": ip3,
+		}
 		// Create pod that has has file sytem mounted
-		_, err := h.k8sHelp.ResourceOperationFromTemplate("delete", fileTestData.podDefPath)
+		_, err := h.k8sHelp.ResourceOperationFromTemplate("delete", fileTestData.podDefPath, config)
 		if err != nil {
 			return "UNMOUNT UNSUCCESSFUL", err
 		}

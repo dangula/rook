@@ -15,6 +15,8 @@ import (
 	"github.com/rook/rook/e2e/framework/objects"
 	"github.com/rook/rook/e2e/framework/transport"
 	"github.com/rook/rook/e2e/framework/utils"
+	"os"
+	"path/filepath"
 )
 
 type rookTestInfraManager struct {
@@ -38,7 +40,7 @@ const (
 	rookOperatorFileName           = "rook-operator.yaml"
 	rookClusterFileName            = "rook-cluster.yaml"
 	rookClientFileName             = "rook-client.yaml"
-	podSpecPath                    = "../../../demo/kubernetes"
+	podSpecPath                    = "src/github.com/rook/rook/demo/kubernetes"
 	scriptsPath                    = "scripts"
 	k8sFalsePostiveSuccessErrorMsg = "exit status 1" //When kubectl drain is executed, exit status 1 is always returned in stdout
 	rookDindK8sClusterScriptv1_5   = "rook-dind-cluster-v1.5.sh"
@@ -270,7 +272,9 @@ func (r *rookTestInfraManager) getContainerIdByName(containerName string) (conta
 
 //method for create rook-operator via kubectl
 func createK8sRookOperator(k8sHelper *utils.K8sHelper, tag string) error {
-	raw, err := ioutil.ReadFile(podSpecPath + "/" + rookOperatorFileName)
+	path := filepath.Join(os.Getenv("GOPATH"), podSpecPath)
+
+	raw, err := ioutil.ReadFile(path + "/" + rookOperatorFileName)
 
 	if err != nil {
 		return err
@@ -302,7 +306,9 @@ func createK8sRookOperator(k8sHelper *utils.K8sHelper, tag string) error {
 func createK8sRookClient(k8sHelper *utils.K8sHelper, tag string) (err error) {
 
 	//Create rook client
-	raw, err := ioutil.ReadFile(podSpecPath + "/" + rookClientFileName)
+	path := filepath.Join(os.Getenv("GOPATH"), podSpecPath)
+
+	raw, err := ioutil.ReadFile(path + "/" + rookClientFileName)
 
 	if err != nil {
 		panic(err)
@@ -331,7 +337,9 @@ func createK8sRookClient(k8sHelper *utils.K8sHelper, tag string) (err error) {
 }
 
 func createk8sRookCluster(k8sHelper *utils.K8sHelper, tag string) error {
-	raw, err := ioutil.ReadFile(podSpecPath + "/" + rookClusterFileName)
+	path := filepath.Join(os.Getenv("GOPATH"), podSpecPath)
+
+	raw, err := ioutil.ReadFile(path + "/" + rookClusterFileName)
 
 	if err != nil {
 		return err
