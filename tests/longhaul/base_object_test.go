@@ -32,7 +32,7 @@ func createObjectStoreAndUser(t func() *testing.T, kh *utils.K8sHelper, tc *clie
 
 	conninfo, conninfoError := tc.GetObjectClient().ObjectGetUser(storeName, userId)
 	require.Nil(t(), conninfoError)
-	s3endpoint, _ := kh.GetRGWServiceURL(storeName, namespace)
+	s3endpoint, _ := kh.GetExternalRGWServiceURL(storeName, namespace)
 	s3client := utils.CreateNewS3Helper(s3endpoint, *conninfo.AccessKey, *conninfo.SecretKey)
 
 	return s3client
@@ -72,11 +72,11 @@ func bucketOperations(s3 *utils.S3Helper, bucketName string, wg *sync.WaitGroup,
 		key2 := fake.CharactersN(30)
 		key3 := fake.CharactersN(30)
 		key4 := fake.CharactersN(30)
-		s3.PutObjectInBucket(bucketName, fake.CharactersN(200), key1, "plain/text")
-		s3.PutObjectInBucket(bucketName, fake.CharactersN(200), key2, "plain/text")
-		s3.PutObjectInBucket(bucketName, fake.CharactersN(200), key3, "plain/text")
-		s3.PutObjectInBucket(bucketName, fake.CharactersN(200), key4, "plain/text")
-		s3.PutObjectInBucket(bucketName, fake.CharactersN(200), key1, "plain/text")
+		s3.PutObjectInBucket(bucketName, fake.CharactersN(10), key1, "plain/text")
+		s3.PutObjectInBucket(bucketName, fake.CharactersN(30000000), key2, "plain/text")
+		s3.PutObjectInBucket(bucketName, fake.CharactersN(10000000), key3, "plain/text")
+		s3.PutObjectInBucket(bucketName, fake.CharactersN(50000000), key4, "plain/text")
+		s3.PutObjectInBucket(bucketName, fake.CharactersN(30000000), key1, "plain/text")
 		s3.GetObjectInBucket(bucketName, key1)
 		s3.GetObjectInBucket(bucketName, key2)
 		s3.GetObjectInBucket(bucketName, key3)
